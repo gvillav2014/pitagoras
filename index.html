@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuProfe20 Lab | Pitágoras en acción</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP CDN for complex fluid animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f8fc;
+            background-image: radial-gradient(#d0e2f3 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+        .font-display {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        /* custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        .btn-3d {
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 var(--tw-shadow-color);
+        }
+        .btn-3d:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 var(--tw-shadow-color);
+        }
+        /* SVG Interactive highlights */
+        .side-a { stroke: #2563eb; stroke-width: 4; }
+        .side-b { stroke: #ea580c; stroke-width: 4; }
+        .side-c { stroke: #9333ea; stroke-width: 4; }
+        .square-a { fill: #3b82f6; fill-opacity: 0.15; stroke: #2563eb; stroke-width: 2; }
+        .square-b { fill: #f97316; fill-opacity: 0.15; stroke: #ea580c; stroke-width: 2; }
+        .square-c { fill: #a855f7; fill-opacity: 0.15; stroke: #9333ea; stroke-width: 2; }
+        
+        /* Grid SVG styling */
+        .grid-line { stroke: rgba(0, 0, 0, 0.12); stroke-width: 0.5; }
+        .grid-line-c { stroke: rgba(147, 51, 234, 0.25); stroke-width: 0.5; }
+
+        /* Floating tooltips/labels */
+        .geo-label {
+            font-size: 14px;
+            font-weight: 700;
+            user-select: none;
+            pointer-events: none;
+        }
+        .animated-unit {
+            transition: transform 0.05s linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-30 px-4 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-blue-600 to-purple-600 text-white p-2.5 rounded-2xl shadow-md flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <div>
+                    <h1 class="font-display text-xl md:text-2xl font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                        TuProfe20 <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">Lab</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium">Demostración geométrica visual: Teorema de Pitágoras</p>
+                </div>
+            </div>
+
+            <!-- Global Controls & Modes -->
+            <div class="flex items-center flex-wrap gap-2 md:gap-4">
+                <!-- Selector de Modo -->
+                <div class="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center">
+                    <button id="btn-mode-guided" onclick="setMode('guided')" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white shadow-sm text-blue-600">
+                        🎓 Guiado
+                    </button>
+                    <button id="btn-mode-explore" onclick="setMode('explore')" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900">
+                        ⚡ Explorar
+                    </button>
+                </div>
+
+                <!-- Sonido -->
+                <button id="btn-audio" onclick="toggleAudio()" class="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition" title="Activar/Desactivar Sonido">
+                    <span id="audio-icon">🔊</span>
+                </button>
+
+                <!-- Cuadrícula de fondo toggle -->
+                <button id="btn-grid-toggle" onclick="toggleGridLines()" class="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition" title="Ocultar/Mostrar cuadrículas">
+                    <span id="grid-icon">🌐</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Panel Izquierdo/Superior: Escena Geométrica Principal -->
+        <section class="lg:col-span-8 flex flex-col gap-4">
+            
+            <!-- SVG Canvas Container -->
+            <div class="relative bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex-1 min-h-[420px] md:min-h-[520px] flex flex-col">
+                
+                <!-- Zoom & Pan Controls bar (Top Right of Canvas) -->
+                <div class="absolute top-4 right-4 z-10 flex gap-2 bg-white/90 backdrop-blur border border-slate-200 p-1.5 rounded-2xl shadow-sm">
+                    <button onclick="zoomCanvas(1.15)" class="p-1.5 hover:bg-slate-100 rounded-xl font-bold text-slate-700" title="Acercar">+</button>
+                    <button onclick="zoomCanvas(0.85)" class="p-1.5 hover:bg-slate-100 rounded-xl font-bold text-slate-700" title="Alejar">-</button>
+                    <button onclick="resetZoomAndPan()" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-xl font-semibold text-slate-700" title="Ver todo">Ver todo 🔍</button>
+                </div>
+
+                <!-- Selector de Triángulos (Top Left of Canvas) -->
+                <div class="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur border border-slate-200 p-2 rounded-2xl shadow-sm max-w-[85%] md:max-w-none">
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Triángulo Pitagórico</label>
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                        <button class="tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border" data-a="3" data-b="4" data-c="5">3 - 4 - 5</button>
+                        <button class="tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border" data-a="5" data-b="12" data-c="13">5 - 12 - 13</button>
+                        <button class="tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border" data-a="6" data-b="8" data-c="10">6 - 8 - 10</button>
+                        <button class="tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border" data-a="8" data-b="15" data-c="17">8 - 15 - 17</button>
+                        <button class="tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border" data-a="7" data-b="24" data-c="25">7 - 24 - 25</button>
+                    </div>
+                </div>
+
+                <!-- SVG Interactive Scene -->
+                <div class="w-full h-full flex-1 cursor-grab active:cursor-grabbing relative overflow-hidden" id="svg-viewport">
+                    <svg id="geo-svg" class="w-full h-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 1000 1000">
+                        <defs>
+                            <!-- Drop Shadows -->
+                            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.12" />
+                            </filter>
+                        </defs>
+                        <!-- Interactive transform group for Pan/Zoom -->
+                        <g id="world-group">
+                            <!-- Background Grid lines -->
+                            <g id="bg-grid-group"></g>
+
+                            <!-- Outer Squares with grid cells -->
+                            <g id="square-a-group"></g>
+                            <g id="square-b-group"></g>
+                            <g id="square-c-group"></g>
+
+                            <!-- Animated moving unit tiles layer -->
+                            <g id="tiles-layer"></g>
+
+                            <!-- Central Right Triangle -->
+                            <g id="triangle-group"></g>
+
+                            <!-- Angle Marker and Labels Layer -->
+                            <g id="labels-layer"></g>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Live Equality Banner Below Canvas -->
+                <div class="bg-slate-900 text-white p-3 md:p-4 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-widest bg-amber-400/10 px-2 py-1 rounded">Ecuación Viva</span>
+                        <div id="equation-display" class="font-display text-lg md:text-xl font-semibold tracking-wide text-white">
+                            a² + b² = c²
+                        </div>
+                    </div>
+                    <div id="status-message" class="text-xs md:text-sm text-slate-300 font-medium max-w-md">
+                        Selecciona un caso o pulsa «Paso siguiente» para explorar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de Controles de Reproducción y Pasos -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-3 md:p-4 shadow-md flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="btn-play-pause" onclick="togglePlayPause()" class="btn-3d shadow-blue-800 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                        <span id="play-icon">▶</span> <span id="play-text">Reproducir</span>
+                    </button>
+                    <button id="btn-next-step" onclick="nextStep()" class="btn-3d shadow-slate-700 bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm">
+                        Paso Siguiente ➔
+                    </button>
+                    <button id="btn-check" onclick="startCheckAnimation()" class="btn-3d shadow-emerald-800 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-1.5">
+                        ✨ ¡Comprobar!
+                    </button>
+                    <button id="btn-reset" onclick="resetCurrentScene()" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition">
+                        🔄 Reiniciar
+                    </button>
+                </div>
+
+                <!-- Velocidad -->
+                <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <span class="text-xs font-bold text-slate-500">Velocidad:</span>
+                    <select id="speed-select" onchange="changeSpeed()" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1.0x Normal</option>
+                        <option value="1.8">1.8x Rápido</option>
+                        <option value="3">3.0x Ultra</option>
+                    </select>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Panel Derecho: Robot Guía + Desafío + Explicaciones -->
+        <aside class="lg:col-span-4 flex flex-col gap-5">
+
+            <!-- Robot Guía TuProfe20 -->
+            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl border border-indigo-700/30 p-5 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="flex items-start gap-3 mb-3 z-10">
+                    <!-- SVG Avatar Robot Profe -->
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 p-0.5 shadow-lg flex-shrink-0 flex items-center justify-center">
+                        <div class="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center relative">
+                            <svg class="w-9 h-9 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="absolute top-2 right-2 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="font-display font-bold text-base text-blue-300">Tutor Virtual TuProfe20</h2>
+                        <span id="step-indicator" class="inline-block bg-blue-500/20 text-blue-300 text-[11px] font-bold px-2 py-0.5 rounded-full mt-0.5">Paso 1 de 5</span>
+                    </div>
+                </div>
+
+                <div id="robot-speech" class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/60 text-sm text-slate-200 leading-relaxed shadow-inner font-medium">
+                    ¡Hola! Soy tu tutor interactivo. Observa el triángulo rectángulo en el centro. Sus catetos valen 3 y 4 unidades. ¡Avanza para construir sus cuadrados!
+                </div>
+            </div>
+
+            <!-- Desafío Interactivo del Estudiante (Pregunta sobre unidades cuadradas) -->
+            <div id="quiz-card" class="bg-white rounded-3xl border border-slate-200 p-5 shadow-lg flex flex-col gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🤔</span>
+                    <h3 class="font-display font-bold text-slate-800 text-base">Reto de Razonamiento</h3>
+                </div>
+                <p id="quiz-question" class="text-xs text-slate-600 font-medium">
+                    ¿Cuántas unidades cuadradas en total se necesitan para cubrir exactamente el cuadrado de la hipotenusa (<span class="font-bold text-purple-600">c²</span>)?
+                </p>
+                
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="number" id="quiz-input" placeholder="Ej: 25" class="w-full bg-slate-50 border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 outline-none transition">
+                    <button onclick="checkUserAnswer()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex-shrink-0">
+                        Responder
+                    </button>
+                </div>
+                <div id="quiz-feedback" class="text-xs font-semibold hidden rounded-xl p-2.5"></div>
+            </div>
+
+            <!-- Tarjeta Informativa de Lados y Áreas -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-lg flex flex-col gap-3">
+                <h3 class="font-display font-bold text-slate-800 text-sm uppercase tracking-wider text-slate-400">Datos Geométricos Actuales</h3>
+                
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- Cateto a -->
+                    <div class="bg-blue-50/70 border border-blue-200 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] uppercase font-extrabold text-blue-600 block">Cateto a</span>
+                        <div id="data-a-val" class="font-display font-bold text-blue-700 text-base">a = 3</div>
+                        <div id="data-a2-val" class="text-xs text-blue-600 font-semibold">a² = 9 u²</div>
+                    </div>
+
+                    <!-- Cateto b -->
+                    <div class="bg-orange-50/70 border border-orange-200 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] uppercase font-extrabold text-orange-600 block">Cateto b</span>
+                        <div id="data-b-val" class="font-display font-bold text-orange-700 text-base">b = 4</div>
+                        <div id="data-b2-val" class="text-xs text-orange-600 font-semibold">b² = 16 u²</div>
+                    </div>
+
+                    <!-- Hipotenusa c -->
+                    <div class="bg-purple-50/70 border border-purple-200 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] uppercase font-extrabold text-purple-600 block">Hipotenusa c</span>
+                        <div id="data-c-val" class="font-display font-bold text-purple-700 text-base">c = 5</div>
+                        <div id="data-c2-val" class="text-xs text-purple-600 font-semibold">c² = 25 u²</div>
+                    </div>
+                </div>
+
+                <!-- Nota Didáctica -->
+                <div class="mt-2 text-[11px] text-slate-500 leading-normal bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-start gap-2">
+                    <span class="text-blue-500 text-sm">💡</span>
+                    <span><strong>Nota pedagógica:</strong> La comprobación con cuadrículas permite verificar el teorema geométricamente en casos numéricos exactos. La demostración matemática general es válida para cualquier valor continuo.</span>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- JS Logic Code -->
+    <script>
+        /**
+         * TuProfe20 Lab | Engine de Simulación Geométrica e Interactiva
+         */
+
+        // --- Configuración Global de Datos ---
+        const TRIANGLES = [
+            { a: 3, b: 4, c: 5 },
+            { a: 5, b: 12, c: 13 },
+            { a: 6, b: 8, c: 10 },
+            { a: 8, b: 15, c: 17 },
+            { a: 7, b: 24, c: 25 }
+        ];
+
+        let currentTri = TRIANGLES[0]; // Triángulo inicial (3,4,5)
+        let currentStep = 1;           // Paso de la secuencia guiada (1 a 5)
+        let isPlaying = false;
+        let animationSpeed = 1.0;
+        let currentMode = 'guided';    // 'guided' o 'explore'
+        let soundEnabled = true;
+        let showGridLines = true;
+
+        // Viewport Zoom/Pan state
+        let scale = 1.0;
+        let pointX = 0;
+        let pointY = 0;
+        let isDragging = false;
+        let startX = 0, startY = 0;
+
+        // Audio Synth con Web Audio API
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'tile') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300 + Math.random() * 200, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.04);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                } else if (type === 'complete') {
+                    // Arpeggio de celebración
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        g.gain.setValueAtTime(0.15, now + idx * 0.08);
+                        g.gain.linearRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+                        o.start(now + idx * 0.08);
+                        o.stop(now + idx * 0.08 + 0.25);
+                    });
+                } else if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                }
+            } catch(e) {
+                console.warn('Audio context playback blocked or unsupported', e);
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('audio-icon').innerText = soundEnabled ? '🔊' : '🔇';
+            document.getElementById('btn-audio').classList.toggle('bg-red-50', !soundEnabled);
+        }
+
+        function toggleGridLines() {
+            showGridLines = !showGridLines;
+            document.getElementById('grid-icon').innerText = showGridLines ? '🌐' : '⬜';
+            renderScene();
+        }
+
+        // --- Renderizador Geométrico Exacto SVG ---
+        function renderScene() {
+            const world = document.getElementById('world-group');
+            const bgGrid = document.getElementById('bg-grid-group');
+            const sqA = document.getElementById('square-a-group');
+            const sqB = document.getElementById('square-b-group');
+            const sqC = document.getElementById('square-c-group');
+            const tilesLayer = document.getElementById('tiles-layer');
+            const triGroup = document.getElementById('triangle-group');
+            const labelsLayer = document.getElementById('labels-layer');
+
+            // Limpieza general
+            bgGrid.innerHTML = '';
+            sqA.innerHTML = '';
+            sqB.innerHTML = '';
+            sqC.innerHTML = '';
+            tilesLayer.innerHTML = '';
+            triGroup.innerHTML = '';
+            labelsLayer.innerHTML = '';
+
+            const { a, b, c } = currentTri;
+
+            // Escala geométrica para mantener todo en vista dentro del sistema 1000x1000
+            // Usamos un factor de escala u (píxeles por unidad)
+            const maxDimension = b + c; // Dimensión máxima aproximada
+            const u = Math.min(28, Math.max(12, 450 / maxDimension));
+
+            // Centro del triángulo rectángulo en la pantalla
+            // Colocamos el vértice del ángulo recto (C) en un punto estratégico
+            const Cx = 450;
+            const Cy = 550;
+
+            // Vértices del triángulo:
+            // C = (Cx, Cy) [Ángulo recto]
+            // A = (Cx, Cy - a * u) [Hacia arriba en Y de pantalla]
+            // B = (Cx + b * u, Cy) [Hacia la derecha en X de pantalla]
+            const Ax = Cx;
+            const Ay = Cy - a * u;
+
+            const Bx = Cx + b * u;
+            const By = Cy;
+
+            // --- Dibujar Cuadrícula de Fondo Suave ---
+            for (let x = 0; x < 1000; x += 40) {
+                bgGrid.appendChild(createSvgElement('line', { x1: x, y1: 0, x2: x, y2: 1000, class: 'grid-line' }));
+            }
+            for (let y = 0; y < 1000; y += 40) {
+                bgGrid.appendChild(createSvgElement('line', { x1: 0, y1: y, x2: 1000, y2: y, class: 'grid-line' }));
+            }
+
+            // --- 1. Cuadrado sobre Cateto a (a x a) Hacia la Izquierda ---
+            // Lado CA va de (Cx, Cy) a (Cx, Cy - a*u).
+            // Normal exterior apunta a la izquierda: (-u, 0)
+            const sqAPath = `M ${Cx} ${Cy} L ${Cx - a*u} ${Cy} L ${Cx - a*u} ${Ay} L ${Ax} ${Ay} Z`;
+            sqA.appendChild(createSvgElement('path', { d: sqAPath, class: 'square-a', id: 'path-sq-a' }));
+
+            // --- 2. Cuadrado sobre Cateto b (b x b) Hacia Abajo ---
+            // Lado CB va de (Cx, Cy) a (Cx + b*u, Cy).
+            // Normal exterior apunta hacia abajo: (0, +u)
+            const sqBPath = `M ${Cx} ${Cy} L ${Bx} ${Cy} L ${Bx} ${Cy + b*u} L ${Cx} ${Cy + b*u} Z`;
+            sqB.appendChild(createSvgElement('path', { d: sqBPath, class: 'square-b', id: 'path-sq-b' }));
+
+            // --- 3. Cuadrado sobre Hipotenusa c (c x c) Hacia el Exterior (Arriba-Derecha) ---
+            // Vector Hipotenusa de A a B: V = (Bx - Ax, By - Ay) = (b*u, a*u)
+            // Normal perpendicular externa N = (-a*u, b*u) pero normalizada en dirección opuesta
+            // Dirección hacia fuera: dx = -a*u, dy = -b*u
+            const dxC = -a * u;
+            const dyC = -b * u;
+
+            const Ax_c = Ax - dxC;
+            const Ay_c = Ay - dyC;
+            const Bx_c = Bx - dxC;
+            const By_c = By - dyC;
+
+            const sqCPath = `M ${Ax} ${Ay} L ${Bx} ${By} L ${Bx_c} ${By_c} L ${Ax_c} ${Ay_c} Z`;
+            sqC.appendChild(createSvgElement('path', { d: sqCPath, class: 'square-c', id: 'path-sq-c' }));
+
+            // --- Dibujar Cuadrículas Internas (Unidades Cuadradas) ---
+            if (showGridLines && currentStep >= 3) {
+                // Cuadrícula Cateto a (columna x fila)
+                for (let i = 0; i <= a; i++) {
+                    sqA.appendChild(createSvgElement('line', { x1: Cx - i*u, y1: Cy, x2: Cx - i*u, y2: Ay, class: 'grid-line' }));
+                    sqA.appendChild(createSvgElement('line', { x1: Cx, y1: Cy - i*u, x2: Cx - a*u, y2: Cy - i*u, class: 'grid-line' }));
+                }
+
+                // Cuadrícula Cateto b
+                for (let i = 0; i <= b; i++) {
+                    sqB.appendChild(createSvgElement('line', { x1: Cx + i*u, y1: Cy, x2: Cx + i*u, y2: Cy + b*u, class: 'grid-line' }));
+                    sqB.appendChild(createSvgElement('line', { x1: Cx, y1: Cy + i*u, x2: Bx, y2: Cy + i*u, class: 'grid-line' }));
+                }
+
+                // Cuadrícula Hipotenusa c (Rotada según la pendiente de c)
+                // Usamos vectores unitarios de la base del cuadrado c
+                const ux = (Bx - Ax) / c;
+                const uy = (By - Ay) / c;
+                const vx = -uy;
+                const vy = ux;
+
+                for (let i = 0; i <= c; i++) {
+                    // Líneas paralelas a la hipotenusa
+                    const p1x = Ax + i * vx;
+                    const p1y = Ay + i * vy;
+                    const p2x = Bx + i * vx;
+                    const p2y = By + i * vy;
+                    sqC.appendChild(createSvgElement('line', { x1: p1x, y1: p1y, x2: p2x, y2: p2y, class: 'grid-line-c' }));
+
+                    // Líneas perpendiculares
+                    const q1x = Ax + i * ux;
+                    const q1y = Ay + i * uy;
+                    const q2x = Ax + i * ux + c * vx;
+                    const q2y = Ay + i * uy + c * vy;
+                    sqC.appendChild(createSvgElement('line', { x1: q1x, y1: q1y, x2: q2x, y2: q2y, class: 'grid-line-c' }));
+                }
+            }
+
+            // --- 4. Triángulo Rectángulo Central ---
+            const triPath = `M ${Cx} ${Cy} L ${Ax} ${Ay} L ${Bx} ${By} Z`;
+            triGroup.appendChild(createSvgElement('path', {
+                d: triPath,
+                fill: '#ffffff',
+                'fill-opacity': '0.9',
+                stroke: '#1e293b',
+                'stroke-width': '3.5',
+                'stroke-linejoin': 'round',
+                filter: 'url(#shadow)'
+            }));
+
+            // Marcador del ángulo recto de 90° en (Cx, Cy)
+            const squareSize = Math.min(16, u * 0.4);
+            const rightAnglePath = `M ${Cx - squareSize} ${Cy} L ${Cx - squareSize} ${Cy + squareSize} L ${Cx} ${Cy + squareSize}`;
+            triGroup.appendChild(createSvgElement('path', {
+                d: `M ${Cx - squareSize} ${Cy} L ${Cx - squareSize} ${Cy - squareSize} L ${Cx} ${Cy - squareSize}`,
+                fill: 'none',
+                stroke: '#ef4444',
+                'stroke-width': '2.5'
+            }));
+            // Punto del ángulo recto
+            triGroup.appendChild(createSvgElement('circle', {
+                cx: Cx - squareSize/2,
+                cy: Cy - squareSize/2,
+                r: 2,
+                fill: '#ef4444'
+            }));
+
+            // --- Lados del Triángulo con Colores de Énfasis ---
+            triGroup.appendChild(createSvgElement('line', { x1: Cx, y1: Cy, x2: Ax, y2: Ay, class: 'side-a' }));
+            triGroup.appendChild(createSvgElement('line', { x1: Cx, y1: Cy, x2: Bx, y2: By, class: 'side-b' }));
+            triGroup.appendChild(createSvgElement('line', { x1: Ax, y1: Ay, x2: Bx, y2: By, class: 'side-c' }));
+
+            // --- Etiquetas de Longitud y Áreas ---
+            if (currentStep >= 1) {
+                // Etiqueta Cateto a
+                labelsLayer.appendChild(createBadgeText(Cx + 14, (Cy + Ay)/2, `a = ${a}`, '#2563eb'));
+                // Etiqueta Cateto b
+                labelsLayer.appendChild(createBadgeText((Cx + Bx)/2, Cy - 14, `b = ${b}`, '#ea580c'));
+                // Etiqueta Hipotenusa c
+                const midCx = (Ax + Bx)/2 + 15;
+                const midCy = (Ay + By)/2 - 15;
+                labelsLayer.appendChild(createBadgeText(midCx, midCy, `c = ${c}`, '#9333ea'));
+            }
+
+            if (currentStep >= 2) {
+                // Área a²
+                labelsLayer.appendChild(createBadgeText(Cx - (a*u)/2, Cy - (a*u)/2, `a² = ${a*a} u²`, '#1d4ed8', '14px'));
+                // Área b²
+                labelsLayer.appendChild(createBadgeText(Cx + (b*u)/2, Cy + (b*u)/2, `b² = ${b*b} u²`, '#c2410c', '14px'));
+                // Área c²
+                const cCenterX = Ax + (Bx - Ax)/2 + (dxC/2);
+                const cCenterY = Ay + (By - Ay)/2 + (dyC/2);
+                labelsLayer.appendChild(createBadgeText(cCenterX, cCenterY, `c² = ${c*c} u²`, '#7e22ce', '16px'));
+            }
+
+            // Actualizar interfaz textual y ecuación
+            updateEquationUI();
+        }
+
+        // --- Helper SVG Element Creator ---
+        function createSvgElement(tag, attrs) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (let key in attrs) {
+                el.setAttribute(key, attrs[key]);
+            }
+            return el;
+        }
+
+        function createBadgeText(x, y, text, color, fontSize = '13px') {
+            const g = createSvgElement('g', { transform: `translate(${x}, ${y})` });
+            
+            const rect = createSvgElement('rect', {
+                x: -35,
+                y: -12,
+                width: 70,
+                height: 24,
+                rx: 8,
+                fill: '#ffffff',
+                stroke: color,
+                'stroke-width': '1.5',
+                filter: 'url(#shadow)'
+            });
+            
+            const txt = createSvgElement('text', {
+                x: 0,
+                y: 4,
+                'text-anchor': 'middle',
+                fill: color,
+                'font-size': fontSize,
+                'font-weight': '700',
+                class: 'font-display'
+            });
+            txt.textContent = text;
+
+            g.appendChild(rect);
+            g.appendChild(txt);
+            return g;
+        }
+
+        // --- Actualizar Ecuación e Interfaz Textual ---
+        function updateEquationUI() {
+            const { a, b, c } = currentTri;
+            const eqEl = document.getElementById('equation-display');
+            const dataA = document.getElementById('data-a-val');
+            const dataA2 = document.getElementById('data-a2-val');
+            const dataB = document.getElementById('data-b-val');
+            const dataB2 = document.getElementById('data-b2-val');
+            const dataC = document.getElementById('data-c-val');
+            const dataC2 = document.getElementById('data-c2-val');
+
+            dataA.innerText = `a = ${a}`;
+            dataA2.innerText = `a² = ${a*a} u²`;
+            dataB.innerText = `b = ${b}`;
+            dataB2.innerText = `b² = ${b*b} u²`;
+            dataC.innerText = `c = ${c}`;
+            dataC2.innerText = `c² = ${c*c} u²`;
+
+            if (currentStep === 1) {
+                eqEl.innerHTML = `<span class="text-blue-400">a</span>² + <span class="text-orange-400">b</span>² = <span class="text-purple-400">c</span>²`;
+            } else if (currentStep === 2) {
+                eqEl.innerHTML = `<span class="text-blue-400">${a}²</span> + <span class="text-orange-400">${b}²</span> = <span class="text-purple-400">${c}²</span>`;
+            } else {
+                eqEl.innerHTML = `<span class="text-blue-400">${a*a}</span> + <span class="text-orange-400">${b*b}</span> = <span class="text-purple-400">${c*c}</span>`;
+            }
+
+            // Resaltar botones de triángulo activo
+            document.querySelectorAll('.tri-btn').forEach(btn => {
+                const btnA = parseInt(btn.getAttribute('data-a'));
+                const btnB = parseInt(btn.getAttribute('data-b'));
+                if (btnA === a && btnB === b) {
+                    btn.className = 'tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border bg-blue-600 text-white border-blue-600 shadow-sm';
+                } else {
+                    btn.className = 'tri-btn px-2.5 py-1 rounded-lg text-xs font-bold transition border bg-white text-slate-700 hover:bg-slate-100 border-slate-200';
+                }
+            });
+
+            // Actualizar Robot Guía según el paso
+            updateRobotSpeech();
+        }
+
+        // --- Sistema de Mensajes del Robot Guía ---
+        function updateRobotSpeech() {
+            const speech = document.getElementById('robot-speech');
+            const stepInd = document.getElementById('step-indicator');
+            const { a, b, c } = currentTri;
+
+            stepInd.innerText = `Paso ${currentStep} de 5`;
+
+            switch (currentStep) {
+                case 1:
+                    speech.innerHTML = `Identificamos el triángulo rectángulo con ángulo de 90°. Sus catetos son <strong class="text-blue-400">a = ${a}</strong> y <strong class="text-orange-400">b = ${b}</strong>, y la hipotenusa es <strong class="text-purple-400">c = ${c}</strong>.`;
+                    break;
+                case 2:
+                    speech.innerHTML = `Trazamos un cuadrado hacia el exterior de cada lado. El área de cada cuadrado equivale al lado multiplicado por sí mismo (<strong class="text-blue-400">a²=${a*a}</strong>, <strong class="text-orange-400">b²=${b*b}</strong>, <strong class="text-purple-400">c²=${c*c}</strong>).`;
+                    break;
+                case 3:
+                    speech.innerHTML = `Dividimos los cuadrados en cuadrículas de 1 unidad cuadrada. ¡Cuenta las celdas! Tenemos <strong>${a*a}</strong> celdas azules y <strong>${b*b}</strong> celdas naranjas.`;
+                    break;
+                case 4:
+                    speech.innerHTML = `¿Listos para comprobar? Pulsa <strong>«¡Comprobar!»</strong> para trasladar los cuadraditos de los catetos hacia el cuadrado de la hipotenusa.`;
+                    break;
+                case 5:
+                    speech.innerHTML = `🎉 <strong>¡Comprobar completado!</strong> Las ${a*a} unidades azules y las ${b*b} unidades naranjas cubren exactamente las ${c*c} celdas de la hipotenusa. <br><span class="text-amber-300 font-bold">¡a² + b² = c² comprobado geométricamente!</span>`;
+                    break;
+            }
+        }
+
+        // --- Animación de Traslado de Cuadraditos (Secuencia Principal) ---
+        function startCheckAnimation() {
+            currentStep = 4;
+            renderScene();
+            
+            const tilesLayer = document.getElementById('tiles-layer');
+            tilesLayer.innerHTML = ''; // Limpiar baldosas previas
+
+            const { a, b, c } = currentTri;
+
+            // Escala geométrica igual que en renderScene
+            const maxDimension = b + c;
+            const u = Math.min(28, Math.max(12, 450 / maxDimension));
+
+            const Cx = 450;
+            const Cy = 550;
+            const Ax = Cx;
+            const Ay = Cy - a * u;
+            const Bx = Cx + b * u;
+            const By = Cy;
+
+            // Vectores para la hipotenusa
+            const ux = (Bx - Ax) / c;
+            const uy = (By - Ay) / c;
+            const vx = -uy;
+            const vy = ux;
+
+            // Arreglo con la posición de destino en la cuadrícula de la Hipotenusa C (indexado de 0 a c*c - 1)
+            const targetPositions = [];
+            for (let row = 0; row < c; row++) {
+                for (let col = 0; col < c; col++) {
+                    // Centro de la celda de destino
+                    const tx = Ax + (col + 0.5) * ux + (row + 0.5) * vx;
+                    const ty = Ay + (col + 0.5) * uy + (row + 0.5) * vy;
+                    targetPositions.push({ x: tx, y: ty });
+                }
+            }
+
+            // 1. Crear cuadraditos origen Cateto A (a*a piezas)
+            const tiles = [];
+            let targetIdx = 0;
+
+            for (let row = 0; row < a; row++) {
+                for (let col = 0; col < a; col++) {
+                    const startX = Cx - (col + 0.5) * u;
+                    const startY = Cy - (row + 0.5) * u;
+
+                    const tile = createSvgElement('rect', {
+                        x: -u/2,
+                        y: -u/2,
+                        width: u - 0.8,
+                        height: u - 0.8,
+                        rx: 2,
+                        fill: '#3b82f6',
+                        stroke: '#1d4ed8',
+                        'stroke-width': '0.8',
+                        transform: `translate(${startX}, ${startY})`,
+                        class: 'animated-unit'
+                    });
+
+                    tilesLayer.appendChild(tile);
+                    tiles.push({
+                        element: tile,
+                        startX: startX,
+                        startY: startY,
+                        targetX: targetPositions[targetIdx].x,
+                        targetY: targetPositions[targetIdx].y,
+                        color: '#3b82f6',
+                        group: 'a'
+                    });
+                    targetIdx++;
+                }
+            }
+
+            // 2. Crear cuadraditos origen Cateto B (b*b piezas)
+            for (let row = 0; row < b; row++) {
+                for (let col = 0; col < b; col++) {
+                    const startX = Cx + (col + 0.5) * u;
+                    const startY = Cy + (row + 0.5) * u;
+
+                    const tile = createSvgElement('rect', {
+                        x: -u/2,
+                        y: -u/2,
+                        width: u - 0.8,
+                        height: u - 0.8,
+                        rx: 2,
+                        fill: '#f97316',
+                        stroke: '#c2410c',
+                        'stroke-width': '0.8',
+                        transform: `translate(${startX}, ${startY})`,
+                        class: 'animated-unit'
+                    });
+
+                    tilesLayer.appendChild(tile);
+                    tiles.push({
+                        element: tile,
+                        startX: startX,
+                        startY: startY,
+                        targetX: targetPositions[targetIdx].x,
+                        targetY: targetPositions[targetIdx].y,
+                        color: '#f97316',
+                        group: 'b'
+                    });
+                    targetIdx++;
+                }
+            }
+
+            // Ángulo de rotación para encajar en la hipotenusa
+            const angleRad = Math.atan2(uy, ux);
+            const angleDeg = angleRad * (180 / Math.PI);
+
+            // Animar con GSAP en grupos/ondas escalonadas
+            const duration = Math.max(0.4, 1.2 / animationSpeed);
+            const totalPieces = tiles.length;
+
+            // Determinar tamaño de lote para evitar lentitud en casos grandes (ej. 576+49=625)
+            const batchSize = totalPieces > 200 ? 25 : totalPieces > 50 ? 8 : 1;
+
+            tiles.forEach((t, index) => {
+                const batchIndex = Math.floor(index / batchSize);
+                const delay = batchIndex * (0.05 / animationSpeed);
+
+                gsap.to(t.element, {
+                    duration: duration,
+                    delay: delay,
+                    ease: "power2.inOut",
+                    onStart: () => {
+                        if (index % batchSize === 0) playSound('tile');
+                    },
+                    onUpdate: function() {
+                        const progress = this.progress();
+                        const curX = t.startX + (t.targetX - t.startX) * progress;
+                        const curY = t.startY + (t.targetY - t.startY) * progress;
+                        const curRot = angleDeg * progress;
+
+                        t.element.setAttribute('transform', `translate(${curX}, ${curY}) rotate(${curRot})`);
+                    },
+                    onComplete: () => {
+                        if (index === totalPieces - 1) {
+                            currentStep = 5;
+                            updateRobotSpeech();
+                            playSound('complete');
+                            showToastMessage("¡Las áreas de los cuadrados de los catetos suman exactamente el área del cuadrado de la hipotenusa!");
+                        }
+                    }
+                });
+            });
+        }
+
+        // --- Toast / Banner emergente de confirmación ---
+        function showToastMessage(msg) {
+            const statusMsg = document.getElementById('status-message');
+            statusMsg.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5 animate-bounce">✅ ${msg}</span>`;
+        }
+
+        // --- Control de Pasos Guiados ---
+        function nextStep() {
+            playSound('step');
+            if (currentStep < 3) {
+                currentStep++;
+                renderScene();
+            } else if (currentStep === 3) {
+                startCheckAnimation();
+            } else if (currentStep >= 4) {
+                // Ciclar al inicio si se pulsa de nuevo
+                currentStep = 1;
+                renderScene();
+            }
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            const playText = document.getElementById('play-text');
+            const playIcon = document.getElementById('play-icon');
+
+            if (isPlaying) {
+                playText.innerText = "Pausar";
+                playIcon.innerText = "⏸";
+                runAutoSequence();
+            } else {
+                playText.innerText = "Reproducir";
+                playIcon.innerText = "▶";
+            }
+        }
+
+        function runAutoSequence() {
+            if (!isPlaying) return;
+            if (currentStep < 3) {
+                nextStep();
+                setTimeout(runAutoSequence, 2500 / animationSpeed);
+            } else if (currentStep === 3) {
+                startCheckAnimation();
+                setTimeout(() => {
+                    if (isPlaying) {
+                        isPlaying = false;
+                        document.getElementById('play-text').innerText = "Reproducir";
+                        document.getElementById('play-icon').innerText = "▶";
+                    }
+                }, 4000 / animationSpeed);
+            }
+        }
+
+        function resetCurrentScene() {
+            gsap.killTweensOf('*');
+            currentStep = 1;
+            isPlaying = false;
+            document.getElementById('play-text').innerText = "Reproducir";
+            document.getElementById('play-icon').innerText = "▶";
+            document.getElementById('status-message').innerText = "Selecciona un caso o pulsa «Paso siguiente» para explorar.";
+            renderScene();
+            playSound('click');
+        }
+
+        function changeSpeed() {
+            animationSpeed = parseFloat(document.getElementById('speed-select').value);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-mode-guided').className = mode === 'guided' 
+                ? 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white shadow-sm text-blue-600'
+                : 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900';
+
+            document.getElementById('btn-mode-explore').className = mode === 'explore'
+                ? 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white shadow-sm text-blue-600'
+                : 'px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900';
+
+            playSound('click');
+        }
+
+        // --- Evaluación Interactiva / Quiz de Estudiante ---
+        function checkUserAnswer() {
+            const input = document.getElementById('quiz-input');
+            const feedback = document.getElementById('quiz-feedback');
+            const val = parseInt(input.value);
+            const expected = currentTri.c * currentTri.c;
+
+            feedback.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-red-100', 'text-red-800');
+
+            if (val === expected) {
+                feedback.classList.add('bg-emerald-100', 'text-emerald-800');
+                feedback.innerHTML = `🎉 ¡Excelente! ${currentTri.a}² + ${currentTri.b}² = ${currentTri.a*currentTri.a} + ${currentTri.b*currentTri.b} = <strong>${expected} u²</strong>.`;
+                playSound('complete');
+            } else {
+                feedback.classList.add('bg-red-100', 'text-red-800');
+                feedback.innerHTML = `💡 Recuerda sumar a² + b² (${currentTri.a*currentTri.a} + ${currentTri.b*currentTri.b}). ¡Inténtalo de nuevo!`;
+                playSound('click');
+            }
+        }
+
+        // --- Controles de Pan y Zoom SVG ---
+        function updateTransform() {
+            const world = document.getElementById('world-group');
+            world.setAttribute('transform', `translate(${pointX}, ${pointY}) scale(${scale})`);
+        }
+
+        function zoomCanvas(factor) {
+            scale *= factor;
+            scale = Math.min(Math.max(0.5, scale), 3.0);
+            updateTransform();
+        }
+
+        function resetZoomAndPan() {
+            scale = 1.0;
+            pointX = 0;
+            pointY = 0;
+            updateTransform();
+        }
+
+        // Eventos Drag & Pan
+        const viewport = document.getElementById('svg-viewport');
+
+        viewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - pointX;
+            startY = e.clientY - pointY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            pointX = e.clientX - startX;
+            pointY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // --- Inicialización y Listeners ---
+        window.onload = () => {
+            // Asignar clics a selector de triángulos
+            document.querySelectorAll('.tri-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const a = parseInt(e.target.getAttribute('data-a'));
+                    const b = parseInt(e.target.getAttribute('data-b'));
+                    const c = parseInt(e.target.getAttribute('data-c'));
+                    
+                    currentTri = { a, b, c };
+                    document.getElementById('quiz-input').value = '';
+                    document.getElementById('quiz-feedback').classList.add('hidden');
+                    resetCurrentScene();
+                });
+            });
+
+            // Renderizado inicial
+            renderScene();
+        };
+
+        // Redimensionamiento adaptativo suave
+        window.addEventListener('resize', () => {
+            renderScene();
+        });
+    </script>
+</body>
+</html>
